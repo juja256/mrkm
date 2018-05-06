@@ -2,6 +2,7 @@
 #include <time.h>
 #include <math.h>
 #include <algorithm>
+#include <iostream>
 
 static WORD base_pascal_seq_3[] = {1};
 static WORD base_pascal_seq_5[] = {1};
@@ -28,8 +29,9 @@ void PrimeNumbers::CalculatePrimes(int n) {
         return;
     }
     else if (!primesTable.empty() && (n > primesTable.back())) {
-        bool isPrime = true;
+        
         for (int i=primesTable.back()+1; i<=n; i++) {
+            bool isPrime = true;
             for (int j=2; j<=int(sqrt(i)); j++) {
                 if (i % j == 0) {
                     isPrime = false;
@@ -40,8 +42,8 @@ void PrimeNumbers::CalculatePrimes(int n) {
         }
     }
     else {
-        bool isPrime = true;
         for (int i=2; i<=n; i++) {
+            bool isPrime = true;
             for (int j=2; j<=int(sqrt(i)); j++) {
                 if (i % j == 0) {
                     isPrime = false;
@@ -73,7 +75,7 @@ int PrimeNumbers::GetSmallPrimesCount(int n) {
     if (n <= 29) return small_pre[n];
     for (int i=n;i>0;i--) {
         if (IsSmallPrime(i)) {
-            return std::distance(primesTable.begin(), std::find(primesTable.begin(), primesTable.end(), i));
+            return std::distance(primesTable.begin(), std::find(primesTable.begin(), primesTable.end(), i)) + 1;
         }
     }
 }
@@ -115,6 +117,8 @@ static bool IsDivisible(L_NUMBER n, int p) {
 
 /* From https://pdfs.semanticscholar.org/3df0/e64897ebbed46a6d034196f9b3962ca45b07.pdf */
 void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
+    std::cout << k << "\n";
+    std::cout.flush();
     if (k<20) {
         unsigned n;
         bool isPrime;
@@ -128,7 +132,7 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
                     break;
                 }       
             }
-        } while(isPrime);
+        } while(!isPrime);
         N->words[0] = n;
         return;
     } 
@@ -141,12 +145,13 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
             do {
                 float s = prng->generateFloat();
                 r = pow(2, s-1);
-            } while(int(k - r*k) > m);
+            } while(int(k - r*k) <= m);
         }
         else {
             r = 0.5;
         }
         FastPrimeMaurer(int(r*k), N, prng);
+
         bool success = false;
         L_NUMBER D, R, I;
         L_NUMBER unity;
@@ -166,6 +171,9 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
             L_NUMBER b1 = {0,0};
             L_NUMBER b2 = {0,0};
             L_NUMBER dd = {0,0};
+            L_NUMBER n = {0,0};
+            L_NUMBER a = {0,0};
+            L_NUMBER pp = {0,0};
             do {
                 l_copy(&b1, &I);
                 l_copy(&b2, &I);
@@ -176,6 +184,7 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
                 l_mul(&b1, N, &dd);
                 l_copy(&b1, &dd);
                 l_add(&b1, &unity, &b1); // n = 2*R*q + 1
+                l_dump(&b1, 'h');
                 mayBePrime = true;
                 int p_cnt = GetSmallPrimesCount( int(B) );
                 for (int i=0; i<=p_cnt; i++) {  
@@ -185,31 +194,39 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
                     }
                 }
                 
-            } while( mayBePrime );
-            L_NUMBER n = {0,0};
+            } while( !mayBePrime );
+            
             l_copy(&n, &b1);
             l_null(&b2);
             b2.words[0] = 2;
             l_sub(&b1, &b2, &b1);
-            L_NUMBER a = {0,0};
-            L_NUMBER b = {0,0};
-            L_NUMBER mu = {0,0};
-            L_NUMBER pp = {0,0};
             l_init(&pp, N->len);
             prng->generateBoundedLargeInt(b2, b1, &a);
-            m_pre_barret(2*N->len, &n, &mu);
+            m_pre_barret(2*N->len, &n, &dd);
             l_sub(&n, &unity, &pp);
-            m_pow(&a, &pp, &n, &mu, &a); // a = a^{n-1} mod n
+            m_pow(&a, &pp, &n, &dd, &a); // a = a^{n-1} mod n
+            
             if (l_cmp(&a, &unity) == 0) {
-                
+                l_shift_l(&R, 1, &R); // 2R
+                m_pow(&b2, &R, &n, &dd, &b2); // 2^2R mod n
+                l_sub(&b2, &unity, &b2); // 2^2R - 1 mod n
+                m_gcd(&b2, &n, &b1); // gcd(2^2R - 1 mod n, n)
+                if (l_cmp(&b1, &unity) == 0) {
+                    success = true;
+                    l_copy(N, &n); // Found prime !
+                }
             }
 
             l_free(&b1);
             l_free(&b2);
             l_free(&dd);
             l_free(&a);
-            
+            l_free(&pp);
         }
+        l_free(&unity);
+        l_free(&D);
+        l_free(&R);
+        l_free(&I);
     }
 }
 
