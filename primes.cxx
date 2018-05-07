@@ -117,8 +117,8 @@ static bool IsDivisible(L_NUMBER n, int p) {
 
 /* From https://pdfs.semanticscholar.org/3df0/e64897ebbed46a6d034196f9b3962ca45b07.pdf */
 void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
-    std::cout << k << "\n";
-    std::cout.flush();
+    //std::cout << k << "\n";
+    //std::cout.flush();
     if (k<20) {
         unsigned n;
         bool isPrime;
@@ -150,9 +150,11 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
         else {
             r = 0.5;
         }
-        FastPrimeMaurer(int(r*k), N, prng);
+        int newNLen = int(r*k);
+        FastPrimeMaurer(newNLen, N, prng);
 
         bool success = false;
+
         L_NUMBER D, R, I;
         L_NUMBER unity;
         l_init(&unity, N->len); unity.words[0] = 1;
@@ -163,7 +165,6 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
             l_shift_l(&D, k-2, &D);
             l_div(&D, N, &I, &R);
             l_null(&R);
-            R.words[0] = 1;
         }
 
         while (!success) {
@@ -184,7 +185,7 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
                 l_mul(&b1, N, &dd);
                 l_copy(&b1, &dd);
                 l_add(&b1, &unity, &b1); // n = 2*R*q + 1
-                l_dump(&b1, 'h');
+                //l_dump(&b1, 'h');
                 mayBePrime = true;
                 int p_cnt = GetSmallPrimesCount( int(B) );
                 for (int i=0; i<=p_cnt; i++) {  
@@ -195,22 +196,35 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
                 }
                 
             } while( !mayBePrime );
-            
+            u32 n_len = l_bit_len(&b1);
             l_copy(&n, &b1);
+            l_resize(&n, n_len);
+            l_resize(&b1, n_len);
+            l_resize(&b2, n_len);
+            l_resize(&dd, 2*n_len);  // aka mu
+
             l_null(&b2);
             b2.words[0] = 2;
             l_sub(&b1, &b2, &b1);
-            l_init(&pp, N->len);
+            l_init(&pp, n.len);
+
             prng->generateBoundedLargeInt(b2, b1, &a);
-            m_pre_barret(2*N->len, &n, &dd);
+            //l_dump(&a, 'h');
+            m_pre_barret(2*n.len, &n, &dd);
             l_sub(&n, &unity, &pp);
             m_pow(&a, &pp, &n, &dd, &a); // a = a^{n-1} mod n
             
             if (l_cmp(&a, &unity) == 0) {
+                //std::cout << k << " ";l_dump(&n, 'h');
                 l_shift_l(&R, 1, &R); // 2R
                 m_pow(&b2, &R, &n, &dd, &b2); // 2^2R mod n
                 l_sub(&b2, &unity, &b2); // 2^2R - 1 mod n
+                l_null(&b1);
                 m_gcd(&b2, &n, &b1); // gcd(2^2R - 1 mod n, n)
+                //l_dump(&b2, 'h');
+                //l_dump(&n, 'h');
+                //l_dump(&b1, 'h');
+                //std::cout << "\n";
                 if (l_cmp(&b1, &unity) == 0) {
                     success = true;
                     l_copy(N, &n); // Found prime !
