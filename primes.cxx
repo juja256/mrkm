@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 
+#define MIN(x,y) ((x>y) ? (y) : (x))
 static WORD base_pascal_seq_3[] = {1};
 static WORD base_pascal_seq_5[] = {1};
 
@@ -185,9 +186,9 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
                 l_mul(&b1, N, &dd);
                 l_copy(&b1, &dd);
                 l_add(&b1, &unity, &b1); // n = 2*R*q + 1
-                //l_dump(&b1, 'h');
+                
                 mayBePrime = true;
-                int p_cnt = GetSmallPrimesCount( int(B) );
+                int p_cnt = GetSmallPrimesCount( MIN (int(B), 100)  );
                 for (int i=0; i<=p_cnt; i++) {  
                     if (IsDivisible(b1, primesTable[i])) {
                         mayBePrime = false;
@@ -212,6 +213,7 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
             //l_dump(&a, 'h');
             m_pre_barret(2*n.len, &n, &dd);
             l_sub(&n, &unity, &pp);
+            
             m_pow(&a, &pp, &n, &dd, &a); // a = a^{n-1} mod n
             
             if (l_cmp(&a, &unity) == 0) {
@@ -221,6 +223,7 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
                 l_sub(&b2, &unity, &b2); // 2^2R - 1 mod n
                 l_null(&b1);
                 m_gcd(&b2, &n, &b1); // gcd(2^2R - 1 mod n, n)
+                //l_dump(&b1, 'h');
                 //l_dump(&b2, 'h');
                 //l_dump(&n, 'h');
                 //l_dump(&b1, 'h');
@@ -338,4 +341,14 @@ bool PrimeNumbers::MillerRabineTest(L_NUMBER p, int k) {
     }
     l_free(&unity); l_free(&unity_inv); l_free(&a); l_free(&tmp); l_free(&m); l_free(&d);
     return fl;
+}
+
+void PrimeNumbers::PrimeMillerRabine(int k, L_NUMBER* N, PRNG* prng) {
+    int level = 10;
+    prng->generateByteArray( (BYTE*)(N->words), k );
+    N->words[0] |= 1; 
+    while (true) {
+        if (this->MillerRabineTest(*N, level)) break;
+        N->words[0]+=2;
+    }
 }

@@ -90,7 +90,10 @@ class GenBM : public PRNG {
     GenBM(L_NUMBER seed) : GenBM() {
         setSeed(seed);
     }
-
+    GenBM(int seed) : GenBM() {
+        t.words[0] = seed;
+        m_pow(&a, &t, &p, &mu, &t);
+    }
     ~GenBM() {
         l_free(&a); l_free(&p); l_free(&q); l_free(&mu); l_free(&t);
     }
@@ -117,6 +120,7 @@ public:
     int GetSmallPrimesCount(int n);
     bool MillerRabineTest(L_NUMBER p, int k);
     void FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng);
+    void PrimeMillerRabine(int k, L_NUMBER* N, PRNG* prng);
 };
 
 

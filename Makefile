@@ -1,5 +1,5 @@
 GXX:= g++
-FLAGS:= -g -std=c++11
+FLAGS:= -pg -O -std=c++11
 
 all: test
 
