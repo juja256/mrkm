@@ -121,11 +121,15 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
     //std::cout << k << "\n";
     //std::cout.flush();
     if (k<20) {
-        unsigned n;
+        int n=0;
         bool isPrime;
         do {
             isPrime = true;
-            n = prng->generateInt(k);
+            n = 0;
+            while (n < 2) {
+                n = prng->generateInt(k);
+            }
+            
             int p_cnt = GetSmallPrimesCount( int( sqrt(n) ) );
             for (int i=0; i <= p_cnt; i++) {
                 if (n % primesTable[i] == 0) {
@@ -210,7 +214,6 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
             l_init(&pp, n.len);
 
             prng->generateBoundedLargeInt(b2, b1, &a);
-            //l_dump(&a, 'h');
             m_pre_barret(2*n.len, &n, &dd);
             l_sub(&n, &unity, &pp);
             
@@ -223,11 +226,6 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
                 l_sub(&b2, &unity, &b2); // 2^2R - 1 mod n
                 l_null(&b1);
                 m_gcd(&b2, &n, &b1); // gcd(2^2R - 1 mod n, n)
-                //l_dump(&b1, 'h');
-                //l_dump(&b2, 'h');
-                //l_dump(&n, 'h');
-                //l_dump(&b1, 'h');
-                //std::cout << "\n";
                 if (l_cmp(&b1, &unity) == 0) {
                     success = true;
                     l_copy(N, &n); // Found prime !
