@@ -27,6 +27,7 @@ int main() {
     l_init_by_len(&p, bit_len);
     l_init_by_len(&q, bit_len);
     double t1 = GetTickCount();
+    //for (int i=0; i<50; i++)
     ctx.FastPrimeMaurer( bit_len, &p, &prng_std );
     double t2 = GetTickCount();
     ctx.PrimeMillerRabine(bit_len, &q, &prng_std );

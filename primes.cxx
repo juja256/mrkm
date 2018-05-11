@@ -118,8 +118,6 @@ static bool IsDivisible(L_NUMBER n, int p) {
 
 /* From https://pdfs.semanticscholar.org/3df0/e64897ebbed46a6d034196f9b3962ca45b07.pdf */
 void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
-    //std::cout << k << "\n";
-    //std::cout.flush();
     if (k<20) {
         int n=0;
         bool isPrime;
@@ -127,7 +125,7 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
             isPrime = true;
             n = 0;
             while (n < 2) {
-                n = prng->generateInt(k);
+                n = prng->generateInt(k) | 1;
             }
             
             int p_cnt = GetSmallPrimesCount( int( sqrt(n) ) );
@@ -220,12 +218,12 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
             m_pow(&a, &pp, &n, &dd, &a); // a = a^{n-1} mod n
             
             if (l_cmp(&a, &unity) == 0) {
-                //std::cout << k << " ";l_dump(&n, 'h');
                 l_shift_l(&R, 1, &R); // 2R
                 m_pow(&b2, &R, &n, &dd, &b2); // 2^2R mod n
                 l_sub(&b2, &unity, &b2); // 2^2R - 1 mod n
                 l_null(&b1);
-                m_gcd(&b2, &n, &b1); // gcd(2^2R - 1 mod n, n)
+                if (l_cmp(&b1, &b2) != 0)
+                    m_gcd(&b2, &n, &b1); // gcd(2^2R - 1 mod n, n)
                 if (l_cmp(&b1, &unity) == 0) {
                     success = true;
                     l_copy(N, &n); // Found prime !
@@ -342,7 +340,7 @@ bool PrimeNumbers::MillerRabineTest(L_NUMBER p, int k) {
 }
 
 void PrimeNumbers::PrimeMillerRabine(int k, L_NUMBER* N, PRNG* prng) {
-    int level = 10;
+    int level = 20;
     prng->generateByteArray( (BYTE*)(N->words), k );
     N->words[0] |= 1; 
     while (true) {
