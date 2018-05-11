@@ -150,7 +150,7 @@ void PrimeNumbers::FastPrimeMaurer(int k, L_NUMBER* N, PRNG* prng) {
             do {
                 float s = prng->generateFloat();
                 r = pow(2, s-1);
-            } while(int(k - r*k) <= m);
+            } while(k - r*k <= double(m));
         }
         else {
             r = 0.5;
